@@ -20,11 +20,16 @@
 </head>
 <body class="bg-light">
 
-<div class="container py-5">
-  <div class="card shadow-sm">
-    <div class="card-body">
+<div class="container-fluid py-3 px-2 px-sm-3 px-md-4">
+  <div class="row justify-content-center">
 
-      <h3 class="card-title mb-4">X投稿文ジェネレーター</h3>
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+
+      <h3 class="card-title">X推し発狂ジェネレーター</h3>
+      <h6 class="card-subtitle mb-4 text-body-secondary">推しへの愛を叫びましょう。</h6>
 
       <!-- 繰り返し文字 -->
       <div class="mb-3">
@@ -37,11 +42,33 @@
         <label class="form-label">ハッシュタグなど（空でもOK）</label>
         <input id="suffixText" class="form-control" placeholder="#蓮ノ空6th福岡Day1" />
       </div>
+      <div class="mb-3">
+        <label class="form-label">よく使うハッシュタグ</label>
+
+        <div class="d-flex flex-wrap gap-2">
+
+          <div class="form-check">
+            <input class="form-check-input hashtag-check" type="checkbox" value="#蓮ノ空" id="tag1">
+            <label class="form-check-label" for="tag1">#蓮ノ空</label>
+          </div>
+
+          <div class="form-check">
+            <input class="form-check-input hashtag-check" type="checkbox" value="#リンクラ" id="tag2">
+            <label class="form-check-label" for="tag2">#リンクラ</label>
+          </div>
+
+          <div class="form-check">
+            <input class="form-check-input hashtag-check" type="checkbox" value="#lovelive" id="tag3">
+            <label class="form-check-label" for="tag3">#lovelive</label>
+          </div>
+
+        </div>
+      </div>
 
       <!-- 結果 -->
       <div class="mb-3">
         <label class="form-label">生成結果</label>
-        <textarea id="resultText" class="form-control" rows="4" readonly></textarea>
+        <textarea id="resultText" class="form-control" rows="7" readonly></textarea>
       </div>
 
       <!-- 文字数 -->
@@ -50,10 +77,12 @@
       </div>
 
       <!-- ボタン -->
-      <button id="postButton" class="btn btn-primary w-100">
+      <button id="postButton" class="btn btn-outline-primary mb-3">
         Xに投稿する
       </button>
+       <div class="text-end text-muted small">Ver. 0.217 ©airmiya</div>
 
+    </div>
     </div>
   </div>
 </div>
@@ -100,6 +129,27 @@
       charCount.className = "badge bg-danger";
     }
   }
+  const hashtagChecks = document.querySelectorAll(".hashtag-check");
+
+  function updateSuffixFromCheckbox() {
+    const selected = [];
+
+    hashtagChecks.forEach(cb => {
+      if (cb.checked) {
+        selected.push(cb.value);
+      }
+    });
+
+    // 半角スペースで結合
+    suffixText.value = selected.join(" ");
+
+    generatePost();
+  }
+
+  // チェック変更時に反映
+  hashtagChecks.forEach(cb => {
+    cb.addEventListener("change", updateSuffixFromCheckbox);
+  });
 
   function postToX() {
     const text = encodeURIComponent(resultText.value);
