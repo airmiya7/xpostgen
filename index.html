@@ -21,6 +21,13 @@
 
   <!-- Bootstrap CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  .btn-clear {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+    border: 1px solid var(--bs-border-color);
+  }
+</style>
 </head>
 <body class="bg-light">
 
@@ -38,14 +45,28 @@
       <!-- 繰り返し文字 -->
       <div class="mb-3">
         <label class="form-label">繰り返す文字</label>
-        <input id="repeatText" class="form-control" placeholder="さち" />
+
+        <div class="input-group">
+          <input id="repeatText" class="form-control" placeholder="さち" />
+          <button class="btn btn-outline-secondary btn-clear" type="button" id="clearRepeat">
+            ×
+          </button>
+        </div>
       </div>
 
       <!-- ハッシュタグ -->
       <div class="mb-3">
         <label class="form-label">ハッシュタグなど（空でもOK）</label>
-        <input id="suffixText" class="form-control" placeholder="#蓮ノ空6th福岡Day1" />
+
+        <div class="input-group">
+          <input id="suffixText" class="form-control" placeholder="#蓮ノ空6th福岡Day1" />
+          <button class="btn btn-outline-secondary btn-clear" type="button" id="clearSuffix">
+            ×
+          </button>
+        </div>
       </div>
+
+      <!-- ハッシュチェックボックス -->
       <div class="mb-3">
         <label class="form-label">よく使うハッシュタグ</label>
 
@@ -84,9 +105,10 @@
       <button id="postButton" class="btn btn-outline-primary w-100 mb-3">
         Xに投稿する
       </button>
-       <div class="text-end text-muted small">ver. 0.217 ©airmiya</div>
-
-    </div>
+       <div class="text-end text-muted small">
+        ver. 0.217
+        ©<a href="https://x.com/airmiya" target="_blank" class="link-secondary text-decoration-none">airmiya</a></div>
+      </div>
     </div>
   </div>
 </div>
@@ -133,27 +155,55 @@
       charCount.className = "badge bg-danger";
     }
   }
-  const hashtagChecks = document.querySelectorAll(".hashtag-check");
 
-  function updateSuffixFromCheckbox() {
-    const selected = [];
+const hashtagChecks = document.querySelectorAll(".hashtag-check");
 
-    hashtagChecks.forEach(cb => {
-      if (cb.checked) {
-        selected.push(cb.value);
-      }
-    });
+function updateSuffixFromCheckbox() {
+  const checkedTags = Array.from(hashtagChecks)
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
 
-    // 半角スペースで結合
-    suffixText.value = selected.join(" ");
+  const allPresetTags = Array.from(hashtagChecks)
+    .map(cb => cb.value);
 
-    generatePost();
-  }
+  // 現在入力されている内容を分解
+  const currentTags = suffixText.value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
 
-  // チェック変更時に反映
-  hashtagChecks.forEach(cb => {
-    cb.addEventListener("change", updateSuffixFromCheckbox);
-  });
+  // 手入力分だけ残す
+  // つまり、チェックボックス由来のタグはいったん除外
+  const manualTags = currentTags.filter(tag => !allPresetTags.includes(tag));
+
+  // 手入力分 + チェック中タグ
+  const mergedTags = [...manualTags, ...checkedTags];
+
+  suffixText.value = mergedTags.join(" ");
+
+  generatePost();
+}
+
+hashtagChecks.forEach(cb => {
+  cb.addEventListener("change", updateSuffixFromCheckbox);
+});
+
+const clearRepeat = document.getElementById("clearRepeat");
+const clearSuffix = document.getElementById("clearSuffix");
+
+clearRepeat.addEventListener("click", () => {
+  repeatText.value = "";
+  generatePost();
+});
+
+clearSuffix.addEventListener("click", () => {
+  suffixText.value = "";
+
+  // チェックボックスも全部外す（ここ重要）
+  hashtagChecks.forEach(cb => cb.checked = false);
+
+  generatePost();
+});
 
   function postToX() {
     const text = encodeURIComponent(resultText.value);
