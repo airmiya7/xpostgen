@@ -40,17 +40,18 @@
         <div class="card-body">
 
       <h3 class="card-title">X推し発狂ジェネレーター</h3>
-      <h6 class="card-subtitle mb-4 text-body-secondary">推しへの愛を叫びましょう。</h6>
+      <h6 class="card-subtitle mb-4 text-body-secondary">推しへの愛を叫ぼう</h6>
 
       <!-- 繰り返し文字 -->
       <div class="mb-3">
-        <label class="form-label">繰り返す文字</label>
+        <label class="form-label">繰り返す文字（推しの名）</label>
 
         <div class="input-group">
           <input id="repeatText" class="form-control">
-          <button class="btn btn-outline-secondary btn-clear" type="button" id="clearRepeat">
-            ×
-          </button>
+          <button class="btn btn-outline-secondary btn-clear" type="button" id="clearRepeat">×</button>
+        </div>
+        <div class="form-text text-end">
+          <span id="repeatCount" class="badge bg-secondary">0 / 140</span>
         </div>
       </div>
 
@@ -60,14 +61,15 @@
 
         <div class="input-group">
           <input id="suffixText" class="form-control">
-          <button class="btn btn-outline-secondary btn-clear" type="button" id="clearSuffix">
-            ×
-          </button>
+          <button class="btn btn-outline-secondary btn-clear" type="button" id="clearSuffix">×</button>
+        </div>
+        <div class="form-text text-end">
+          <span id="suffixCount" class="badge bg-secondary">0 / 140</span>
         </div>
       </div>
 
       <!-- ハッシュチェックボックス -->
-      <div class="mb-3">
+      <div class="mb-5">
         <label class="form-label">よく使うハッシュタグ</label>
 
         <div class="d-flex flex-wrap gap-2">
@@ -93,16 +95,14 @@
       <!-- 結果 -->
       <div class="mb-3">
         <label class="form-label">生成結果</label>
-        <textarea id="resultText" class="form-control" rows="7" readonly></textarea>
-      </div>
-
-      <!-- 文字数 -->
-      <div class="mb-3">
-        <span id="charCount" class="badge bg-secondary">0 / 140</span>
+        <textarea id="resultText" class="form-control" rows="7" readonly placeholder="ここをタップするとコピーできます"></textarea>
+          <div class="mb-3 text-end">
+          <span id="finalCount" class="badge bg-secondary">0 / 140</span>
+        </div>
       </div>
 
       <!-- ボタン -->
-      <button id="postButton" class="btn btn-outline-primary w-100 mb-3">
+      <button id="postButton" class="btn btn-outline-primary w-100 btn-lg mb-3" disabled>
         Xに投稿する
       </button>
        <div class="text-end text-muted small">
@@ -114,69 +114,89 @@
 </div>
 
 <script>
-  const repeatText = document.getElementById("repeatText");
-  const suffixText = document.getElementById("suffixText");
-  const resultText = document.getElementById("resultText");
-  const charCount = document.getElementById("charCount");
-  const postButton = document.getElementById("postButton");
+const LIMIT = 140;
 
-  const LIMIT = 140;
+const repeatText = document.getElementById("repeatText");
+const suffixText = document.getElementById("suffixText");
+const resultText = document.getElementById("resultText");
 
-  function generatePost() {
-    const repeat = repeatText.value;
-    const suffix = suffixText.value.trim();
+const repeatCount = document.getElementById("repeatCount");
+const suffixCount = document.getElementById("suffixCount");
+const finalCount = document.getElementById("finalCount");
 
-    if (!repeat) {
-      resultText.value = "";
-      charCount.textContent = "0 / 140";
-      charCount.className = "badge bg-secondary";
-      return;
-    }
+const hashtagChecks = document.querySelectorAll(".hashtag-check");
 
-    const suffixPart = suffix ? " " + suffix : "";
-    const maxRepeatLength = LIMIT - suffixPart.length;
+const clearRepeat = document.getElementById("clearRepeat");
+const clearSuffix = document.getElementById("clearSuffix");
+const postButton = document.getElementById("postButton");
 
+// 文字数カウントと色設定
+function getBadgeClass(length, limit) {
+  if (length >= limit) return "badge bg-danger";
+  if (length > limit * 0.85) return "badge bg-warning text-dark";
+  return "badge bg-secondary";
+}
+
+// 文字数カウント
+function updateCounts() {
+  const suffix = suffixText.value.trim();
+  const suffixPart = suffix ? " " + suffix : "";
+  const repeatLimit = Math.max(LIMIT - suffixPart.length, 0);
+
+  repeatText.maxLength = repeatLimit;
+
+  if (repeatText.value.length > repeatLimit) {
+    repeatText.value = repeatText.value.slice(0, repeatLimit);
+  }
+
+  repeatCount.textContent = `${repeatText.value.length} / ${repeatLimit}`;
+  repeatCount.className = getBadgeClass(repeatText.value.length, repeatLimit);
+
+  suffixCount.textContent = `${suffix.length} / ${LIMIT}`;
+  suffixCount.className = getBadgeClass(suffix.length, LIMIT);
+}
+
+// 投稿文生成
+function generatePost() {
+  updateCounts();
+
+  const repeat = repeatText.value;
+  const suffix = suffixText.value.trim();
+  const suffixPart = suffix ? " " + suffix : "";
+  const maxRepeatLength = LIMIT - suffixPart.length;
+
+  if (!repeat) {
+    resultText.value = suffix;
+  } else {
     let repeated = "";
 
     while ((repeated + repeat).length <= maxRepeatLength) {
       repeated += repeat;
     }
 
-    const finalText = repeated + suffixPart;
-
-    resultText.value = finalText;
-    charCount.textContent = finalText.length + " / 140";
-
-    // 文字数カラー変化（おまけ）
-    if (finalText.length > 120) {
-      charCount.className = "badge bg-warning text-dark";
-    }
-    if (finalText.length >= 140) {
-      charCount.className = "badge bg-danger";
-    }
+    resultText.value = repeated + suffixPart;
   }
 
-const hashtagChecks = document.querySelectorAll(".hashtag-check");
+  finalCount.textContent = `${resultText.value.length} / ${LIMIT}`;
+  finalCount.className = getBadgeClass(resultText.value.length, LIMIT);
 
+  updatePostButtonState();
+}
+
+// チェックボックスで選択したハッシュタグをsuffixTextに反映
 function updateSuffixFromCheckbox() {
   const checkedTags = Array.from(hashtagChecks)
     .filter(cb => cb.checked)
     .map(cb => cb.value);
 
-  const allPresetTags = Array.from(hashtagChecks)
-    .map(cb => cb.value);
+  const allPresetTags = Array.from(hashtagChecks).map(cb => cb.value);
 
-  // 現在入力されている内容を分解
   const currentTags = suffixText.value
     .trim()
     .split(/\s+/)
     .filter(Boolean);
 
-  // 手入力分だけ残す
-  // つまり、チェックボックス由来のタグはいったん除外
   const manualTags = currentTags.filter(tag => !allPresetTags.includes(tag));
-
-  // 手入力分 + チェック中タグ
   const mergedTags = [...manualTags, ...checkedTags];
 
   suffixText.value = mergedTags.join(" ");
@@ -184,12 +204,29 @@ function updateSuffixFromCheckbox() {
   generatePost();
 }
 
+// Xに投稿する
+function postToX() {
+  const text = encodeURIComponent(resultText.value);
+  const url = `https://twitter.com/intent/tweet?text=${text}`;
+  window.open(url, "_blank");
+}
+
+// 生成結果がない場合は投稿させない
+function updatePostButtonState() {
+  if (!resultText.value) {
+    postButton.disabled = true;
+  } else {
+    postButton.disabled = false;
+  }
+}
+
+// ボタンアクション
+repeatText.addEventListener("input", generatePost);
+suffixText.addEventListener("input", generatePost);
+
 hashtagChecks.forEach(cb => {
   cb.addEventListener("change", updateSuffixFromCheckbox);
 });
-
-const clearRepeat = document.getElementById("clearRepeat");
-const clearSuffix = document.getElementById("clearSuffix");
 
 clearRepeat.addEventListener("click", () => {
   repeatText.value = "";
@@ -198,22 +235,28 @@ clearRepeat.addEventListener("click", () => {
 
 clearSuffix.addEventListener("click", () => {
   suffixText.value = "";
-
-  // チェックボックスも全部外す（ここ重要）
   hashtagChecks.forEach(cb => cb.checked = false);
-
   generatePost();
 });
 
-  function postToX() {
-    const text = encodeURIComponent(resultText.value);
-    const url = `https://twitter.com/intent/tweet?text=${text}`;
-    window.open(url, "_blank");
-  }
+resultText.addEventListener("click", async () => {
+  if (!resultText.value) return;
 
-  repeatText.addEventListener("input", generatePost);
-  suffixText.addEventListener("input", generatePost);
-  postButton.addEventListener("click", postToX);
+  try {
+    await navigator.clipboard.writeText(resultText.value);
+    resultText.classList.add("is-valid");
+
+    setTimeout(() => {
+      resultText.classList.remove("is-valid");
+    }, 1000);
+  } catch (error) {
+    alert("コピーに失敗しました");
+  }
+});
+
+postButton.addEventListener("click", postToX);
+
+generatePost();
 </script>
 
 </body>
