@@ -1,1 +1,453 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <title>マイカ構文ジェネレーター</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="蓮ノ空106期生 錦上マイカちゃんのマイカ構文を生成しよう。">
 
+    <!-- OGP（LINE / Discord / Facebook など） -->
+    <meta property="og:title" content="マイカ構文ジェネレーター">
+    <meta property="og:description" content="蓮ノ空106期生 錦上マイカちゃんのマイカ構文を生成しよう。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://airmiya7.github.io/xpostgen/">
+
+    <!-- X（旧Twitter）カード -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="マイカ構文ジェネレーター">
+    <meta name="twitter:description" content="蓮ノ空106期生 錦上マイカちゃんのマイカ構文を生成しよう。">
+
+    <!-- Bootstrap CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .btn-clear {
+        background-color: var(--bs-secondary-bg);
+        color: var(--bs-secondary-color);
+        border: 1px solid var(--bs-border-color);
+        }
+
+        .fixed-text {
+        white-space: pre-wrap;
+        }
+
+        #resultText {
+        min-height: 180px;
+        cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+<div class="container-fluid py-3 px-2 px-sm-3 px-md-4">
+<div class="row justify-content-center g-0">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 px-0">
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="card-title">マイカ構文ジェネレーター</h3>
+            <h6 class="card-subtitle mb-4 text-body-secondary">マイカ構文を生成しよう</h6>
+
+            <!-- 構文選択 -->
+            <div class="mb-4">
+                <label class="form-label">マイカ構文</label>
+                <div id="patternContainer"></div>
+            </div>
+
+            <!-- 前文 -->
+            <div class="alert alert-dark mb-3">
+                <span id="prefixPreview"></span>
+            </div>
+
+            <!-- 本文 -->
+            <div class="mb-3">
+                <label class="form-label">本文</label>
+
+                <div class="input-group">
+                    <textarea id="bodyText" class="form-control" rows="5" placeholder="ここに本文を入力" ></textarea>
+                    <button class="btn btn-outline-secondary btn-clear" type="button" id="clearBody" >×</button>
+                </div>
+
+                <div class="form-text">
+                    <div class="row align-items-center">
+                        <div class="col">改行もそのまま反映されます。</div>
+                        <div class="col-auto text-end">
+                            <span id="bodyCount" class="badge bg-secondary">0 / 140</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 後文 -->
+            <div class="alert alert-dark mb-3">
+                <span id="suffixPreview"></span>
+            </div>
+
+            <!-- ハッシュタグ -->
+            <div class="mb-3">
+                <label class="form-label">ハッシュタグなど（空でもOK）</label>
+
+                <div class="input-group">
+                    <input id="suffixText" class="form-control">
+                    <button class="btn btn-outline-secondary btn-clear" type="button" id="clearSuffix" >×</button>
+                </div>
+
+                <div class="form-text text-end">
+                    <span id="hashtagCount" class="badge bg-secondary">0 / 140</span>
+                </div>
+            </div>
+
+            <!-- ハッシュチェックボックス -->
+            <div class="mb-5">
+                <label class="form-label">よく使うハッシュタグ</label>
+
+                <div class="d-flex flex-wrap gap-2">
+                <div class="form-check">
+                    <input class="form-check-input hashtag-check" type="checkbox" value="#蓮ノ空" id="tag1">
+                    <label class="form-check-label" for="tag1">#蓮ノ空</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input hashtag-check" type="checkbox" value="#リンクラ" id="tag2">
+                    <label class="form-check-label" for="tag2">#リンクラ</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input hashtag-check" type="checkbox" value="#映画蓮ノ空" id="tag3">
+                    <label class="form-check-label" for="tag3">#映画蓮ノ空</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input hashtag-check" type="checkbox" value="#映画蓮ノ空感想" id="tag4">
+                    <label class="form-check-label" for="tag4">#映画蓮ノ空感想</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input hashtag-check" type="checkbox" value="#lovelive" id="tag5">
+                    <label class="form-check-label" for="tag5">#lovelive</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input hashtag-check" type="checkbox" value="#マイカ構文ジェネレーター" id="tag6" checked>
+                    <label class="form-check-label" for="tag6">#マイカ構文ジェネレーター</label>
+                </div>
+                </div>
+            </div>
+
+            <!-- 生成結果 -->
+            <div class="mb-3">
+                <label class="form-label">生成結果</label>
+                <textarea id="resultText" class="form-control" rows="7" readonly placeholder="ここをタップするとコピーできます" ></textarea>
+                <div class="form-text text-end">
+                <span id="finalCount" class="badge bg-secondary">0 / 140</span>
+                </div>
+            </div>
+
+            <!-- 投稿ボタン -->
+            <button id="postButton" class="btn btn-outline-primary w-100 btn-lg mb-3" disabled>
+                Xに投稿する
+            </button>
+
+            <div class="text-muted small">
+                <a href="https://airmiya7.github.io/xpostgen/" target="_blank" class="link-secondary text-decoration-none">推し発狂ジェネレーター</a>
+            </div>
+
+            <div class="text-end text-muted small">
+                ver. 0.217
+                ©<a href="https://x.com/airmiya" target="_blank" class="link-secondary text-decoration-none">airmiya</a>
+            </div>
+
+            </div>
+        </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const LIMIT = 140;
+
+
+// 構文データ ここに追加するだけでラジオボタンが自動生成される
+const patterns = {
+  1: {
+    label: "余計なことかもしれないですけど......",
+    prefix: "余計なことかもしれないですけど......",
+    suffix: "あ、本当に余計なお世話でしたね......ごめんなさい......"
+  },
+  2: {
+    label: "蒸し返すようですけど......",
+    prefix: "蒸し返すようですけど......",
+    suffix: "あ、ガチで蒸し返してますね......ごめんなさい......"
+  },
+  3: {
+    label: "こんな事言われても困ると思うんですけど......",
+    prefix: "こんな事言われても困ると思うんですけど......",
+    suffix: "本当に困らせちゃいましたね......ごめんなさい......"
+  },
+};
+
+
+// DOM取得
+const patternContainer = document.getElementById("patternContainer");
+const hashtagChecks = document.querySelectorAll(".hashtag-check");
+
+const prefixPreview = document.getElementById("prefixPreview");
+const suffixPreview = document.getElementById("suffixPreview");
+
+const bodyText = document.getElementById("bodyText");
+const suffixText = document.getElementById("suffixText");
+const resultText = document.getElementById("resultText");
+
+const bodyCount = document.getElementById("bodyCount");
+const hashtagCount = document.getElementById("hashtagCount");
+const finalCount = document.getElementById("finalCount");
+
+const clearBody = document.getElementById("clearBody");
+const clearSuffix = document.getElementById("clearSuffix");
+const postButton = document.getElementById("postButton");
+
+let patternRadios;
+
+
+// 文字数・バッジ
+function countChars(text) {
+  return [...text].length;
+}
+
+function getBadgeClass(length, limit) {
+  if (length >= limit) return "badge bg-danger";
+  if (length > limit * 0.85) return "badge bg-warning text-dark";
+  return "badge bg-secondary";
+}
+
+
+// 構文選択
+function getSelectedPatternKey() {
+  const selected = document.querySelector('input[name="maikaPattern"]:checked');
+  return selected ? selected.value : Object.keys(patterns)[0];
+}
+
+function getCurrentPattern() {
+  return patterns[getSelectedPatternKey()];
+}
+
+function renderPatternRadios() {
+  patternContainer.innerHTML = "";
+
+  Object.entries(patterns).forEach(([key, pattern], index) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "form-check mb-2";
+
+    const input = document.createElement("input");
+    input.className = "form-check-input";
+    input.type = "radio";
+    input.name = "maikaPattern";
+    input.id = "pattern" + key;
+    input.value = key;
+    input.checked = index === 0;
+
+    const label = document.createElement("label");
+    label.className = "form-check-label";
+    label.htmlFor = "pattern" + key;
+    label.textContent = pattern.label;
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(label);
+    patternContainer.appendChild(wrapper);
+  });
+
+  patternRadios = document.querySelectorAll('input[name="maikaPattern"]');
+
+  patternRadios.forEach(radio => {
+    radio.addEventListener("change", generatePost);
+  });
+}
+
+function updatePreview() {
+  const current = getCurrentPattern();
+
+  prefixPreview.textContent = current.prefix;
+  suffixPreview.textContent = current.suffix;
+}
+
+
+// 上限計算
+
+function getStructureCount() {
+  const current = getCurrentPattern();
+
+  return countChars(
+    current.prefix +
+    "\n\n" +
+    current.suffix
+  );
+}
+
+function getHashtagLimit() {
+  return Math.max(
+    LIMIT - getStructureCount(),
+    0
+  );
+}
+
+function getBodyLimit() {
+  const structureCount = getStructureCount();
+  const hashtagLength = countChars(suffixText.value.trim());
+
+  return Math.max(
+    LIMIT - structureCount - hashtagLength - 2,
+    0
+  );
+}
+
+
+// 投稿文生成
+function buildPost() {
+  const current = getCurrentPattern();
+  const body = bodyText.value.trim();
+  const suffix = suffixText.value.trim();
+
+  const lines = [current.prefix];
+
+  if (body) {
+    lines.push("", body);
+  }
+
+  lines.push("", current.suffix);
+
+  if (suffix) {
+    lines.push("", suffix);
+  }
+
+  return lines.join("\n");
+}
+
+function updateCounts() {
+  const bodyLength = countChars(bodyText.value.trim());
+  const hashtagLength = countChars(suffixText.value.trim());
+  const totalLength = countChars(resultText.value);
+
+  const bodyLimit = getBodyLimit();
+  const hashtagLimit = getHashtagLimit();
+
+  bodyCount.textContent = bodyLength + " / " + bodyLimit;
+  bodyCount.className = getBadgeClass(bodyLength, bodyLimit);
+
+  hashtagCount.textContent = hashtagLength + " / " + hashtagLimit;
+  hashtagCount.className = getBadgeClass(hashtagLength, hashtagLimit);
+
+  finalCount.textContent = totalLength + " / " + LIMIT;
+  finalCount.className = getBadgeClass(totalLength, LIMIT);
+}
+
+function generatePost() {
+  updatePreview();
+
+  const post = buildPost();
+  const hasContent =
+    bodyText.value.trim().length > 0 ||
+    suffixText.value.trim().length > 0;
+
+  resultText.value = hasContent ? post : "";
+
+  updateCounts();
+  updatePostButtonState();
+}
+
+
+// チェックボックスで選択したハッシュタグをsuffixTextに反映
+
+function updateSuffixFromCheckbox() {
+  const checkedTags = Array.from(hashtagChecks)
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
+
+  const allPresetTags = Array.from(hashtagChecks)
+    .map(cb => cb.value);
+
+  const currentTags = suffixText.value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const manualTags = currentTags
+    .filter(tag => !allPresetTags.includes(tag));
+
+  const mergedTags = [...manualTags, ...checkedTags];
+
+  suffixText.value = mergedTags.join(" ");
+
+  generatePost();
+}
+
+
+// X投稿
+function postToX() {
+  if (!resultText.value) return;
+
+  const text = encodeURIComponent(resultText.value);
+  const url = "https://twitter.com/intent/tweet?text=" + text;
+
+  window.open(url, "_blank");
+}
+
+function updatePostButtonState() {
+  const totalLength = countChars(resultText.value);
+
+  if (!resultText.value || totalLength > LIMIT) {
+    postButton.disabled = true;
+  } else {
+    postButton.disabled = false;
+  }
+}
+
+
+// イベント登録
+bodyText.addEventListener("input", generatePost);
+suffixText.addEventListener("input", generatePost);
+
+hashtagChecks.forEach(cb => {
+  cb.addEventListener("change", updateSuffixFromCheckbox);
+});
+
+clearBody.addEventListener("click", () => {
+  bodyText.value = "";
+  generatePost();
+  bodyText.focus();
+});
+
+clearSuffix.addEventListener("click", () => {
+  suffixText.value = "";
+  hashtagChecks.forEach(cb => cb.checked = false);
+  generatePost();
+  suffixText.focus();
+});
+
+resultText.addEventListener("click", async () => {
+  if (!resultText.value) return;
+
+  try {
+    await navigator.clipboard.writeText(resultText.value);
+    resultText.classList.add("is-valid");
+
+    setTimeout(() => {
+      resultText.classList.remove("is-valid");
+    }, 1000);
+  } catch (error) {
+    alert("コピーに失敗しました");
+  }
+});
+
+postButton.addEventListener("click", postToX);
+
+
+// 初期化
+renderPatternRadios();
+updateSuffixFromCheckbox();
+generatePost();
+</script>
+
+</body>
+</html>
