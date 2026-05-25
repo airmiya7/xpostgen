@@ -121,53 +121,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <!-- ハッシュチェックボックス -->
             <div class="mb-5">
                 <label class="form-label">よく使うハッシュタグ</label>
-
-                <div class="d-flex flex-wrap gap-2">
-                  <div class="form-check">
-                      <input class="form-check-input hashtag-check" type="checkbox" value="#蓮ノ空" id="tag1">
-                      <label class="form-check-label" for="tag1">#蓮ノ空</label>
-                  </div>
-
-                  <div class="form-check">
-                      <input class="form-check-input hashtag-check" type="checkbox" value="#リンクラ" id="tag2">
-                      <label class="form-check-label" for="tag2">#リンクラ</label>
-                  </div>
-
-                  <div class="form-check">
-                      <input class="form-check-input hashtag-check" type="checkbox" value="#映画蓮ノ空" id="tag3">
-                      <label class="form-check-label" for="tag3">#映画蓮ノ空</label>
-                  </div>
-
-                  <div class="form-check">
-                      <input class="form-check-input hashtag-check" type="checkbox" value="#映画蓮ノ空感想" id="tag4">
-                      <label class="form-check-label" for="tag4">#映画蓮ノ空感想</label>
-                  </div>
-
-                  <div class="form-check">
-                      <input class="form-check-input hashtag-check" type="checkbox" value="#lovelive" id="tag5">
-                      <label class="form-check-label" for="tag5">#lovelive</label>
-                  </div>
-                
-                  <div class="form-check">
-                    <input class="form-check-input hashtag-check" type="checkbox" value="#蓮ノ空6th兵庫Day1" id="tag6">
-                    <label class="form-check-label" for="tag6">#蓮ノ空6th兵庫Day1</label>
-                  </div>
-          
-                  <div class="form-check">
-                    <input class="form-check-input hashtag-check" type="checkbox" value="#蓮ノ空6th兵庫Day2" id="tag7">
-                    <label class="form-check-label" for="tag7">#蓮ノ空6th兵庫Day2</label>
-                  </div>
-
-                  <div class="form-check">
-                      <input class="form-check-input hashtag-check" type="checkbox" value="#マイカ構文" id="tag8" checked>
-                      <label class="form-check-label" for="tag8">#マイカ構文</label>
-                  </div>
-
-                  <div class="form-check">
-                      <input class="form-check-input hashtag-check" type="checkbox" value="#マイカ構文ジェネレーター" id="ta9" checked>
-                      <label class="form-check-label" for="tag9">#マイカ構文ジェネレーター</label>
-                  </div>
-                </div>
+                <div class="d-flex flex-wrap gap-2" id="hashtagContainer"></div>
             </div>
 
             <!-- 生成結果 -->
@@ -209,7 +163,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 const LIMIT = 140;
 
 
-// 構文データ ここに追加するだけでラジオボタンが自動生成される
+// 構文プリセット
+// ここに追加するだけでラジオボタンが自動生成される
 const patterns = {
   1: {
     label: "余計なことかもしれないですけど......",
@@ -228,10 +183,30 @@ const patterns = {
   },
 };
 
+// ハッシュタグプリセット
+// ここに追加するだけでチェックボックスが自動生成される
+const hashtags = [
+  { text: "#蓮ノ空" },
+  { text: "#リンクラ" },
+  { text: "#映画蓮ノ空" },
+  { text: "#映画蓮ノ空感想" },
+  { text: "#蓮ノ空6th福岡Day1" },
+  { text: "#蓮ノ空6th福岡Day2" },
+  { text: "#蓮ノ空6th兵庫Day1" },
+  { text: "#蓮ノ空6th兵庫Day2" },
+  { text: "#蓮ノ空6th神奈川Day1" },
+  { text: "#蓮ノ空6th神奈川Day2" },
+  { text: "#蓮ノ空6th埼玉Day1" },
+  { text: "#蓮ノ空6th埼玉Day2" },
+  { text: "#lovelive" },
+  { text: "#マイカ構文", checked: true },
+  { text: "#マイカ構文ジェネレーター", checked: true }
+];
+
 
 // DOM取得
 const patternContainer = document.getElementById("patternContainer");
-const hashtagChecks = document.querySelectorAll(".hashtag-check");
+const hashtagContainer = document.getElementById("hashtagContainer");
 
 const prefixPreview = document.getElementById("prefixPreview");
 const suffixPreview = document.getElementById("suffixPreview");
@@ -248,6 +223,7 @@ const clearBody = document.getElementById("clearBody");
 const clearSuffix = document.getElementById("clearSuffix");
 const postButton = document.getElementById("postButton");
 
+let hashtagChecks;
 let patternRadios;
 
 
@@ -313,8 +289,46 @@ function updatePreview() {
 }
 
 
-// 上限計算
+// ハッシュタグ選択
+function renderHashtagChecks() {
+  hashtagContainer.innerHTML = "";
 
+  hashtags.forEach((tag, index) => {
+    const id = "tag" + (index + 1);
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "form-check";
+
+    const input = document.createElement("input");
+    input.className = "form-check-input hashtag-check";
+    input.type = "checkbox";
+    input.value = tag.text;
+    input.id = id;
+    input.checked = !!tag.checked;
+
+    const label = document.createElement("label");
+    label.className = "form-check-label";
+    label.htmlFor = id;
+    label.textContent = tag.text;
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(label);
+    hashtagContainer.appendChild(wrapper);
+  });
+
+  hashtagChecks =
+    document.querySelectorAll(".hashtag-check");
+
+  hashtagChecks.forEach(cb => {
+    cb.addEventListener(
+      "change",
+      updateSuffixFromCheckbox
+    );
+  });
+}
+
+
+// 上限計算
 function getStructureCount() {
   const current = getCurrentPattern();
 
@@ -448,9 +462,6 @@ function updatePostButtonState() {
 bodyText.addEventListener("input", generatePost);
 suffixText.addEventListener("input", generatePost);
 
-hashtagChecks.forEach(cb => {
-  cb.addEventListener("change", updateSuffixFromCheckbox);
-});
 
 clearBody.addEventListener("click", () => {
   bodyText.value = "";
@@ -485,6 +496,7 @@ postButton.addEventListener("click", postToX);
 
 // 初期化
 renderPatternRadios();
+renderHashtagChecks();
 updateSuffixFromCheckbox();
 generatePost();
 </script>
