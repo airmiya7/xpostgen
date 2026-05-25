@@ -19,6 +19,8 @@
 
     <!-- Bootstrap CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <style>
         .btn-clear {
@@ -34,6 +36,36 @@
         #resultText {
         min-height: 180px;
         cursor: pointer;
+        }
+        .accordion {
+          --bs-accordion-border-width: 0;
+          --bs-accordion-border-color: transparent;
+          --bs-accordion-btn-focus-box-shadow: none;
+          --bs-accordion-active-bg: transparent;
+          --bs-accordion-active-color: inherit;
+        }
+        .accordion-item {
+          border: 0;
+          background: transparent;
+        }
+        .accordion-button {
+          background: transparent;
+          box-shadow: none;
+          padding: 5px 10px 10px 15px;
+          opacity: .8;
+        }
+        .accordion-button:not(.collapsed) {
+          background: transparent;
+          box-shadow: none;
+        }
+        .accordion-button::after {
+          width: .75rem;
+          height: .75rem;
+          background-size: .75rem;
+          opacity: .8;
+        }
+        .accordion-body {
+          padding:0 10px 10px 30px;
         }
     </style>
     <!-- Google Tag Manager -->
@@ -121,7 +153,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <!-- ハッシュチェックボックス -->
             <div class="mb-5">
                 <label class="form-label">よく使うハッシュタグ</label>
-                <div class="d-flex flex-wrap gap-2" id="hashtagContainer"></div>
+                <div class="accordion" id="hashtagAccordion"></div>
             </div>
 
             <!-- 生成結果 -->
@@ -189,22 +221,49 @@ const patterns = {
 
 // ハッシュタグプリセット
 // ここに追加するだけでチェックボックスが自動生成される
-const hashtags = [
-  { text: "#蓮ノ空" },
-  { text: "#リンクラ" },
-  { text: "#映画蓮ノ空" },
-  { text: "#映画蓮ノ空感想" },
-  { text: "#蓮ノ空6th福岡Day1" },
-  { text: "#蓮ノ空6th福岡Day2" },
-  { text: "#蓮ノ空6th兵庫Day1" },
-  { text: "#蓮ノ空6th兵庫Day2" },
-  { text: "#蓮ノ空6th神奈川Day1" },
-  { text: "#蓮ノ空6th神奈川Day2" },
-  { text: "#蓮ノ空6th埼玉Day1" },
-  { text: "#蓮ノ空6th埼玉Day2" },
-  { text: "#lovelive" },
-  { text: "#マイカ構文", checked: true },
-  { text: "#マイカ構文ジェネレーター", checked: true }
+const hashtagGroups = [
+  {
+    title: "基本タグ",
+    icon: "bi-tags",
+    open: true,
+    tags: [
+      { text: "#蓮ノ空" },
+      { text: "#リンクラ" }
+    ]
+  },
+  {
+    title: "映画タグ",
+    icon: "bi-film",
+    open: true,
+    tags: [
+      { text: "#映画蓮ノ空" },
+      { text: "#映画蓮ノ空感想" }
+    ]
+  },
+  {
+    title: "6th Liveタグ",
+    icon: "bi-bank",
+    open: false,
+    tags: [
+      { text: "#蓮ノ空6th福岡Day1" },
+      { text: "#蓮ノ空6th福岡Day2" },
+      { text: "#蓮ノ空6th兵庫Day1" },
+      { text: "#蓮ノ空6th兵庫Day2" },
+      { text: "#蓮ノ空6th神奈川Day1" },
+      { text: "#蓮ノ空6th神奈川Day2" },
+      { text: "#蓮ノ空6th埼玉Day1" },
+      { text: "#蓮ノ空6th埼玉Day2" },
+    ]
+  },
+  {
+    title: "マイカ構文",
+    icon: "bi-chat-heart",
+    open: false,
+    tags: [
+      { text: "#マイカ構文", checked: true },
+      { text: "#マイカ構文ジェネレーター", checked: true }
+    ]
+  }
 ];
 
 
@@ -295,29 +354,107 @@ function updatePreview() {
 
 // ハッシュタグ選択
 function renderHashtagChecks() {
-  hashtagContainer.innerHTML = "";
+  const accordion =
+    document.getElementById("hashtagAccordion");
 
-  hashtags.forEach((tag, index) => {
-    const id = "tag" + (index + 1);
+  accordion.innerHTML = "";
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "form-check";
+  let tagIndex = 1;
 
-    const input = document.createElement("input");
-    input.className = "form-check-input hashtag-check";
-    input.type = "checkbox";
-    input.value = tag.text;
-    input.id = id;
-    input.checked = !!tag.checked;
+  hashtagGroups.forEach((group, groupIndex) => {
+    const collapseId =
+      "hashtagCollapse" + (groupIndex + 1);
 
-    const label = document.createElement("label");
-    label.className = "form-check-label";
-    label.htmlFor = id;
-    label.textContent = tag.text;
+    const headingId =
+      "hashtagHeading" + (groupIndex + 1);
 
-    wrapper.appendChild(input);
-    wrapper.appendChild(label);
-    hashtagContainer.appendChild(wrapper);
+    const item =
+      document.createElement("div");
+
+    item.className = "accordion-item";
+
+    item.innerHTML = `
+      <h2 class="accordion-header"
+          id="${headingId}">
+
+        <button
+          class="accordion-button ${
+            group.open
+              ? ""
+              : "collapsed"
+          }"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#${collapseId}"
+          aria-expanded="${
+            group.open
+              ? "true"
+              : "false"
+          }"
+          aria-controls="${collapseId}"
+        >
+
+          <span class="d-flex align-items-center gap-2">
+            <i class="bi ${group.icon}"></i>
+            <span>${group.title}</span>
+          </span>
+
+        </button>
+      </h2>
+
+      <div
+        id="${collapseId}"
+        class="accordion-collapse collapse ${
+          group.open
+            ? "show"
+            : ""
+        }"
+      >
+        <div class="accordion-body">
+          <div
+            class="d-flex flex-wrap gap-2"
+            data-tag-container
+          ></div>
+        </div>
+      </div>
+    `;
+
+    const tagContainer =
+      item.querySelector("[data-tag-container]");
+
+    group.tags.forEach(tag => {
+      const id = "tag" + tagIndex;
+      tagIndex++;
+
+      const wrapper =
+        document.createElement("div");
+
+      wrapper.className = "form-check";
+
+      const input =
+        document.createElement("input");
+
+      input.className =
+        "form-check-input hashtag-check";
+
+      input.type = "checkbox";
+      input.value = tag.text;
+      input.id = id;
+      input.checked = !!tag.checked;
+
+      const label =
+        document.createElement("label");
+
+      label.className = "form-check-label";
+      label.htmlFor = id;
+      label.textContent = tag.text;
+
+      wrapper.appendChild(input);
+      wrapper.appendChild(label);
+      tagContainer.appendChild(wrapper);
+    });
+
+    accordion.appendChild(item);
   });
 
   hashtagChecks =
