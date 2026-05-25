@@ -67,6 +67,13 @@
         .accordion-body {
           padding:0 10px 10px 30px;
         }
+        .related-link {
+          line-height: 1;
+        }
+        .related-link i {
+          position: relative;
+          top: 0.5px;
+        }
     </style>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -103,7 +110,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             <!-- 構文選択 -->
             <div class="mb-4">
-                <label class="form-label">マイカ構文</label>
+                <label class="form-label">構文選択</label>
                 <div id="patternContainer"></div>
             </div>
 
@@ -137,27 +144,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
 
             <!-- ハッシュタグ -->
-            <div class="mb-3">
-                <label class="form-label">ハッシュタグなど（空でもOK）</label>
-
+            <div class="mb-4">
+                <label class="form-label">ハッシュタグ</label>
                 <div class="input-group">
                     <input id="suffixText" class="form-control">
                     <button class="btn btn-outline-secondary btn-clear" type="button" id="clearSuffix" >×</button>
                 </div>
-
-                <div class="form-text text-end">
-                    <span id="hashtagCount" class="badge bg-secondary">0 / 140</span>
+                <div class="form-text">
+                    <div class="row align-items-center">
+                        <div class="col">未入力でも問題ありません。</div>
+                        <div class="col-auto text-end">
+                            <span id="hashtagCount" class="badge bg-secondary">0 / 140</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- ハッシュチェックボックス -->
-            <div class="mb-5">
+            <div class="mb-4">
                 <label class="form-label">よく使うハッシュタグ</label>
                 <div class="accordion" id="hashtagAccordion"></div>
             </div>
 
             <!-- 生成結果 -->
-            <div class="mb-3">
+            <div class="mb-4">
                 <label class="form-label">生成結果</label>
                 <textarea id="resultText" class="form-control" rows="7" readonly placeholder="ここをタップするとコピーできます" ></textarea>
                 <div class="form-text">
@@ -175,14 +185,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               通常のX投稿上限（140文字）を超えています。  
               <strong>X Premium</strong> が必要です。
             </div>
-            <button id="postButton" class="btn btn-outline-primary w-100 btn-lg mb-3" disabled>
+            <button id="postButton" class="btn btn-outline-primary w-100 btn-lg mb-4" disabled>
                 Xに投稿する
             </button>
 
-            <div class="text-muted small">
-                <a href="https://airmiya7.github.io/xpostgen/" target="_blank" class="link-secondary text-decoration-none">推し発狂ジェネレーター</a>
+            <!-- フッター -->
+            <div class="d-flex align-items-center text-muted small gap-1 related-link">
+              <i class="bi bi-link-45deg"></i>
+              <a href="https://airmiya7.github.io/xpostgen/" target="_blank" class="link-secondary text-decoration-none">
+                推し発狂ジェネレーター
+              </a>
             </div>
-
             <div class="text-end text-muted small">
                 ver. 0.217
                 ©<a href="https://x.com/airmiya" target="_blank" class="link-secondary text-decoration-none">airmiya</a>
@@ -228,7 +241,8 @@ const hashtagGroups = [
     open: true,
     tags: [
       { text: "#蓮ノ空" },
-      { text: "#リンクラ" }
+      { text: "#リンクラ" },
+      { text: "#lovelive" }
     ]
   },
   {
