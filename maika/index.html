@@ -139,6 +139,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
 
             <!-- 投稿ボタン -->
+            <div id="premiumWarning" class="alert alert-danger small py-2 px-3 mb-3 d-none">
+              通常のX投稿上限（140文字）を超えています。  
+              <strong>X Premium</strong> が必要です。
+            </div>
             <button id="postButton" class="btn btn-outline-primary w-100 btn-lg mb-3" disabled>
                 Xに投稿する
             </button>
@@ -412,7 +416,6 @@ function generatePost() {
 
 
 // チェックボックスで選択したハッシュタグをsuffixTextに反映
-
 function updateSuffixFromCheckbox() {
   const checkedTags = Array.from(hashtagChecks)
     .filter(cb => cb.checked)
@@ -447,13 +450,54 @@ function postToX() {
   window.open(url, "_blank");
 }
 
+// 投稿文の文字数に応じたアラート表示
 function updatePostButtonState() {
-  const totalLength = countChars(resultText.value);
+  const totalLength =
+    countChars(resultText.value);
 
-  if (!resultText.value || totalLength > LIMIT) {
+  const premiumWarning =
+    document.getElementById(
+      "premiumWarning"
+    );
+
+  // 入力なし
+  if (!resultText.value) {
     postButton.disabled = true;
-  } else {
+    premiumWarning.classList.add(
+      "d-none"
+    );
+    return;
+  }
+
+  // 140超過
+  if (totalLength > LIMIT) {
+    premiumWarning.classList.remove(
+      "d-none"
+    );
+
     postButton.disabled = false;
+
+    postButton.classList.remove(
+      "btn-outline-primary"
+    );
+
+    postButton.classList.add(
+      "btn-outline-danger"
+    );
+  } else {
+    premiumWarning.classList.add(
+      "d-none"
+    );
+
+    postButton.disabled = false;
+
+    postButton.classList.remove(
+      "btn-outline-danger"
+    );
+
+    postButton.classList.add(
+      "btn-outline-primary"
+    );
   }
 }
 
