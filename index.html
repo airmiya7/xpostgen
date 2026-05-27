@@ -1,30 +1,69 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <title>推し発狂ジェネレーター</title>
+<title>推し発狂ジェネレーター</title>
 
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="推しへの愛を140文字限界まで自動生成できるツール。ハッシュタグも簡単追加。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="推しへの愛を140文字限界まで自動生成できるツール。ハッシュタグも簡単追加。">
 
-  <!-- OGP（LINE / Discord / Facebook など） -->
-  <meta property="og:title" content="推し発狂ジェネレーター">
-  <meta property="og:description" content="推しへの愛を140文字限界まで自動生成できるツール。ハッシュタグも簡単追加。">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://airmiya7.github.io/xpostgen/">
+<!-- OGP（LINE / Discord / Facebook など） -->
+<meta property="og:title" content="推し発狂ジェネレーター">
+<meta property="og:description" content="推しへの愛を140文字限界まで自動生成できるツール。ハッシュタグも簡単追加。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://airmiya7.github.io/xpostgen/">
 
-  <!-- X（旧Twitter）カード -->
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="推し発狂ジェネレーター">
-  <meta name="twitter:description" content="推しへの愛を140文字限界まで自動生成できるツール">
+<!-- X（旧Twitter）カード -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="推し発狂ジェネレーター">
+<meta name="twitter:description" content="推しへの愛を140文字限界まで自動生成できるツール">
 
-  <!-- Bootstrap CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap CDN -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
   .btn-clear {
     background-color: var(--bs-secondary-bg);
     color: var(--bs-secondary-color);
     border: 1px solid var(--bs-border-color);
+  }
+  .accordion {
+    --bs-accordion-border-width: 0;
+    --bs-accordion-border-color: transparent;
+    --bs-accordion-btn-focus-box-shadow: none;
+    --bs-accordion-active-bg: transparent;
+    --bs-accordion-active-color: inherit;
+  }
+  .accordion-item {
+    border: 0;
+    background: transparent;
+  }
+  .accordion-button {
+    background: transparent;
+    box-shadow: none;
+    padding: 5px 10px 10px 15px;
+    opacity: .8;
+  }
+  .accordion-button:not(.collapsed) {
+    background: transparent;
+    box-shadow: none;
+  }
+  .accordion-button::after {
+    width: .75rem;
+    height: .75rem;
+    background-size: .75rem;
+    opacity: .8;
+  }
+  .accordion-body {
+    padding:0 10px 10px 30px;
+  }
+  .related-link {
+    line-height: 1;
+  }
+  .related-link i {
+    position: relative;
+    top: 0.5px;
   }
 </style>
 <!-- Google Tag Manager -->
@@ -62,79 +101,45 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h6 class="card-subtitle mb-4 text-body-secondary">推しへの愛を叫ぼう</h6>
 
       <!-- 繰り返し文字 -->
-      <div class="mb-3">
-        <label class="form-label">繰り返す文字（推しの名）</label>
+      <div class="mb-4">
+        <label class="form-label">繰り返す文字</label>
 
         <div class="input-group">
           <input id="repeatText" class="form-control">
           <button class="btn btn-outline-secondary btn-clear" type="button" id="clearRepeat">×</button>
         </div>
-        <div class="form-text text-end">
-          <span id="repeatCount" class="badge bg-secondary">0 / 140</span>
+        <div class="form-text">
+          <div class="row align-items-center">
+              <div class="col">推しの名前など</div>
+              <div class="col-auto text-end">
+                  <span id="repeatCount" class="badge bg-secondary">0 / 140</span>
+              </div>
+          </div>
         </div>
       </div>
 
       <!-- ハッシュタグ -->
-      <div class="mb-3">
-        <label class="form-label">ハッシュタグなど（空でもOK）</label>
+      <div class="mb-4">
+        <label class="form-label">ハッシュタグなど</label>
 
         <div class="input-group">
           <input id="suffixText" class="form-control">
           <button class="btn btn-outline-secondary btn-clear" type="button" id="clearSuffix">×</button>
         </div>
-        <div class="form-text text-end">
-          <span id="suffixCount" class="badge bg-secondary">0 / 140</span>
+        <div class="form-text">
+          <div class="row align-items-center">
+              <div class="col">未入力でも問題ありません</div>
+              <div class="col-auto text-end">
+                  <span id="suffixCount" class="badge bg-secondary">0 / 140</span>
+              </div>
+          </div>
         </div>
       </div>
 
       <!-- ハッシュチェックボックス -->
-      <div class="mb-5">
+      <div class="mb-4">
         <label class="form-label">よく使うハッシュタグ</label>
-
-        <div class="d-flex flex-wrap gap-2">
-
-          <div class="form-check">
-            <input class="form-check-input hashtag-check" type="checkbox" value="#蓮ノ空" id="tag1">
-            <label class="form-check-label" for="tag1">#蓮ノ空</label>
-          </div>
-
-          <div class="form-check">
-            <input class="form-check-input hashtag-check" type="checkbox" value="#リンクラ" id="tag2">
-            <label class="form-check-label" for="tag2">#リンクラ</label>
-          </div>
-
-          <div class="form-check">
-            <input class="form-check-input hashtag-check" type="checkbox" value="#映画蓮ノ空" id="tag3">
-            <label class="form-check-label" for="tag3">#映画蓮ノ空</label>
-          </div>
-
-          <div class="form-check">
-            <input class="form-check-input hashtag-check" type="checkbox" value="#映画蓮ノ空感想" id="tag4">
-            <label class="form-check-label" for="tag4">#映画蓮ノ空感想</label>
-          </div>
-
-          <div class="form-check">
-            <input class="form-check-input hashtag-check" type="checkbox" value="#lovelive" id="tag5">
-            <label class="form-check-label" for="tag5">#lovelive</label>
-          </div>
-          
-          <div class="form-check">
-            <input class="form-check-input hashtag-check" type="checkbox" value="#蓮ノ空6th兵庫Day1" id="tag6">
-            <label class="form-check-label" for="tag6">#蓮ノ空6th兵庫Day1</label>
-          </div>
-          
-          <div class="form-check">
-            <input class="form-check-input hashtag-check" type="checkbox" value="#蓮ノ空6th兵庫Day2" id="tag7">
-            <label class="form-check-label" for="tag7">#蓮ノ空6th兵庫Day2</label>
-          </div>
-
-
-          <div class="form-check">
-            <input class="form-check-input hashtag-check" type="checkbox" value="#推し発狂ジェネレーター" id="tag8" checked>
-            <label class="form-check-label" for="tag8">#推し発狂ジェネレーター</label>
-          </div>
-
-        </div>
+        <div class="accordion" id="hashtagAccordion"></div>
       </div>
 
       <!-- 結果 -->
@@ -151,13 +156,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         Xに投稿する
       </button>
 
-      <div class="text-muted small">
-          <a href="https://airmiya7.github.io/xpostgen/maika/" target="_blank" class="link-secondary text-decoration-none">マイカ構文ジェネレーター</a>
+      <!-- フッター -->
+      <div class="d-flex align-items-center text-muted small gap-1 related-link">
+        <i class="bi bi-link-45deg"></i>
+        <a href="https://airmiya7.github.io/xpostgen/maika/" target="_blank" class="link-secondary text-decoration-none">
+          マイカ構文ジェネレーター
+        </a>
       </div>
-      
       <div class="text-end text-muted small">
-        ver. 0.217
-        ©<a href="https://x.com/airmiya" target="_blank" class="link-secondary text-decoration-none">airmiya</a></div>
+          ver. 0.217
+          ©<a href="https://x.com/airmiya" target="_blank" class="link-secondary text-decoration-none">airmiya</a>
       </div>
     </div>
   </div>
@@ -174,11 +182,171 @@ const repeatCount = document.getElementById("repeatCount");
 const suffixCount = document.getElementById("suffixCount");
 const finalCount = document.getElementById("finalCount");
 
-const hashtagChecks = document.querySelectorAll(".hashtag-check");
-
 const clearRepeat = document.getElementById("clearRepeat");
 const clearSuffix = document.getElementById("clearSuffix");
 const postButton = document.getElementById("postButton");
+
+let hashtagChecks;
+
+// ハッシュタグプリセット
+// ここに追加するだけでチェックボックスが自動生成される
+const hashtagGroups = [
+  {
+    title: "基本タグ",
+    icon: "bi-tags",
+    open: true,
+    tags: [
+      { text: "#蓮ノ空" },
+      { text: "#リンクラ" },
+      { text: "#lovelive" }
+    ]
+  },
+  {
+    title: "映画タグ",
+    icon: "bi-film",
+    open: true,
+    tags: [
+      { text: "#映画蓮ノ空" },
+      { text: "#映画蓮ノ空感想" }
+    ]
+  },
+  {
+    title: "6th Liveタグ",
+    icon: "bi-bank",
+    open: false,
+    tags: [
+      { text: "#蓮ノ空6th福岡Day1" },
+      { text: "#蓮ノ空6th福岡Day2" },
+      { text: "#蓮ノ空6th兵庫Day1" },
+      { text: "#蓮ノ空6th兵庫Day2" },
+      { text: "#蓮ノ空6th神奈川Day1" },
+      { text: "#蓮ノ空6th神奈川Day2" },
+      { text: "#蓮ノ空6th埼玉Day1" },
+      { text: "#蓮ノ空6th埼玉Day2" },
+    ]
+  },
+  {
+    title: "ジェネレータータグ",
+    icon: "bi-chat-heart",
+    open: false,
+    tags: [
+      { text: "#推し発狂ジェネレーター", checked: true }
+    ]
+  }
+];
+
+// ハッシュタグ選択
+function renderHashtagChecks() {
+  const accordion =
+    document.getElementById("hashtagAccordion");
+
+  accordion.innerHTML = "";
+
+  let tagIndex = 1;
+
+  hashtagGroups.forEach((group, groupIndex) => {
+    const collapseId =
+      "hashtagCollapse" + (groupIndex + 1);
+
+    const headingId =
+      "hashtagHeading" + (groupIndex + 1);
+
+    const item =
+      document.createElement("div");
+
+    item.className = "accordion-item";
+
+    item.innerHTML = `
+      <h2 class="accordion-header"
+          id="${headingId}">
+
+        <button
+          class="accordion-button ${
+            group.open
+              ? ""
+              : "collapsed"
+          }"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#${collapseId}"
+          aria-expanded="${
+            group.open
+              ? "true"
+              : "false"
+          }"
+          aria-controls="${collapseId}"
+        >
+
+          <span class="d-flex align-items-center gap-2">
+            <i class="bi ${group.icon}"></i>
+            <span>${group.title}</span>
+          </span>
+
+        </button>
+      </h2>
+
+      <div
+        id="${collapseId}"
+        class="accordion-collapse collapse ${
+          group.open
+            ? "show"
+            : ""
+        }"
+      >
+        <div class="accordion-body">
+          <div
+            class="d-flex flex-wrap gap-2"
+            data-tag-container
+          ></div>
+        </div>
+      </div>
+    `;
+
+    const tagContainer =
+      item.querySelector("[data-tag-container]");
+
+    group.tags.forEach(tag => {
+      const id = "tag" + tagIndex;
+      tagIndex++;
+
+      const wrapper =
+        document.createElement("div");
+
+      wrapper.className = "form-check";
+
+      const input =
+        document.createElement("input");
+
+      input.className =
+        "form-check-input hashtag-check";
+
+      input.type = "checkbox";
+      input.value = tag.text;
+      input.id = id;
+      input.checked = !!tag.checked;
+
+      const label =
+        document.createElement("label");
+
+      label.className = "form-check-label";
+      label.htmlFor = id;
+      label.textContent = tag.text;
+
+      wrapper.appendChild(input);
+      wrapper.appendChild(label);
+      tagContainer.appendChild(wrapper);
+    });
+
+    accordion.appendChild(item);
+  });
+
+  hashtagChecks =
+    document.querySelectorAll(".hashtag-check");
+
+  hashtagChecks.forEach(cb => {
+    cb.addEventListener("change", updateSuffixFromCheckbox);
+});
+}
 
 // 文字数カウントと色設定
 function getBadgeClass(length, limit) {
@@ -274,10 +442,6 @@ function updatePostButtonState() {
 repeatText.addEventListener("input", generatePost);
 suffixText.addEventListener("input", generatePost);
 
-hashtagChecks.forEach(cb => {
-  cb.addEventListener("change", updateSuffixFromCheckbox);
-});
-
 clearRepeat.addEventListener("click", () => {
   repeatText.value = "";
   generatePost();
@@ -306,6 +470,8 @@ resultText.addEventListener("click", async () => {
 
 postButton.addEventListener("click", postToX);
 
+// 初期化
+renderHashtagChecks();
 updateSuffixFromCheckbox();
 </script>
 
