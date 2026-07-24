@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8f9fa" />
+    <title>活動記録テロップメーカー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet" />
+    <style>
+      body { min-width: 320px; background: #f8f9fa; color: #212529; }
+      .app-header { max-width: 760px; }
+      .canvas-wrap { display: grid; min-height: 340px; place-items: center; overflow: hidden; border: 2px dashed #ced4da; border-radius: .5rem; background: #f8f9fa; }
+      canvas { display: block; max-width: 100%; max-height: 70vh; object-fit: contain; }
+      .empty-message { color: #6c757d; text-align: center; }
+      .privacy-note { color: #6c757d; font-size: .875rem; }
+      .crop-stage { height: min(65vh, 560px); background: #212529; }
+      .crop-stage img { display: block; max-width: 100%; }
+      .hashtag-accordion { --bs-accordion-border-width: 0; --bs-accordion-btn-focus-box-shadow: none; --bs-accordion-active-bg: transparent; --bs-accordion-active-color: inherit; }
+      .hashtag-accordion .accordion-item { background: transparent; border: 0; }
+      .hashtag-accordion .accordion-button { background: transparent; box-shadow: none; padding: .45rem .75rem; }
+      .hashtag-accordion .accordion-body { padding: .25rem .75rem .75rem; }
+      @media (max-width: 767.98px) { .canvas-wrap { min-height: 240px; } }
+      .btn-clear {
+        background-color: var(--bs-secondary-bg);
+        color: var(--bs-secondary-color);
+        border: 1px solid var(--bs-border-color);
+      }
+      .accordion {
+        --bs-accordion-border-width: 0;
+        --bs-accordion-border-color: transparent;
+        --bs-accordion-btn-focus-box-shadow: none;
+        --bs-accordion-active-bg: transparent;
+        --bs-accordion-active-color: inherit;
+      }
+      .accordion-item {
+        border: 0;
+        background: transparent;
+      }
+      .accordion-button {
+        background: transparent;
+        box-shadow: none;
+        padding: 5px 10px 10px 15px;
+        opacity: .8;
+      }
+      .accordion-button:not(.collapsed) {
+        background: transparent;
+        box-shadow: none;
+      }
+      .accordion-button::after {
+        width: .75rem;
+        height: .75rem;
+        background-size: .75rem;
+        opacity: .8;
+      }
+      .accordion-body {
+        padding:0 10px 10px 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container py-3 py-md-3">
+      <header class="app-header mb-4">
+        <h1 class="h2 mb-2">活動記録テロップメーカー</h1>
+        <p class="text-secondary mb-0">写真に活動記録風のテロップを合成し、PNGで保存できます。</p>
+      </header>
+
+      <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-4">
+          <section class="card shadow-sm" aria-labelledby="settings-title">
+            <div class="card-body p-4">
+              <h2 id="settings-title" class="h5 mb-4">テロップを設定</h2>
+              <div class="mb-3">
+                <label class="form-label fw-semibold" for="image-input">画像</label>
+                <input id="image-input" class="form-control" type="file" accept="image/*" />
+              </div>
+              <div class="mb-4">
+                <label class="form-label fw-semibold" for="speaker-input">話者</label>
+                <div class="input-group">
+                  <input id="speaker-input" class="form-control" type="text" maxlength="40" placeholder="花帆" autocomplete="off" />
+                  <button class="btn btn-outline-secondary btn-clear" type="button" id="clear-speaker-button">×</button>
+                </div>
+                <div class="form-text">例：花帆</div>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label fw-semibold" for="dialogue-input">セリフ</label>
+                <div class="input-group">
+                  <textarea id="dialogue-input" class="form-control" rows="5" maxlength="500" placeholder="あたしは日野下花帆。"></textarea>
+                  <button class="btn btn-outline-secondary btn-clear" type="button" id="clear-dialogue-button">×</button>
+                </div>
+                <div class="form-text">改行可・長文は自動で折り返します</div>
+              </div>
+              <div class="mb-4">
+                <label class="form-label fw-semibold" for="hashtag-input">ハッシュタグ</label>
+                <div class="input-group">
+                  <input id="hashtag-input" class="form-control" type="text" placeholder="#蓮ノ空 #リンクラ" autocomplete="off" />
+                  <button class="btn btn-outline-secondary btn-clear" type="button" id="clear-hashtag-button">×</button>
+                </div>
+                <div class="form-text">未入力でも問題ありません</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">よく使うハッシュタグ</label>
+                <div class="accordion" id="hashtag-accordion"></div>
+              </div>
+              
+              <div class="mb-4">
+                <div class="form-label fw-semibold" for="dialogue-input">セリフ投稿</div>
+                <input id="include-dialogue-input" class="form-check-input" type="checkbox" />
+                <label class="form-check-label" for="include-dialogue-input">セリフを投稿文へ含める</label>
+              </div>
+
+              <div class="d-grid gap-2">
+                <button id="download-button" class="btn btn-primary" type="button" disabled>PNGを保存</button>
+                <button id="share-button" class="btn btn-outline-secondary" type="button" disabled>Xで共有</button>
+              </div>
+              <p id="status" class="small text-primary mt-3 mb-0" role="status" aria-live="polite"></p>
+              <p class="privacy-note mt-3 mb-0">画像はブラウザ内でのみ処理され、サーバーへ送信・保存されません。</p>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-12 col-lg-8">
+          <section class="card shadow-sm" aria-labelledby="preview-title">
+            <div class="card-body p-3 p-md-4">
+              <h2 id="preview-title" class="h5 mb-3">プレビュー</h2>
+              <div class="canvas-wrap">
+                <p id="empty-message" class="empty-message mb-0 p-4">画像を選ぶと、ここにプレビューが表示されます。</p>
+                <canvas id="canvas" hidden aria-label="テロップ付き画像のプレビュー"></canvas>
+              </div>
+            </div>
+          </section>
+          <section class="card shadow-sm mt-4" aria-labelledby="post-preview-title">
+            <div class="card-body p-3 p-md-4">
+              <h2 id="post-preview-title" class="h5 mb-3">X投稿文プレビュー</h2>
+              <label class="visually-hidden" for="post-text-input">X投稿文</label>
+              <textarea id="post-text-input" class="form-control" rows="7" placeholder="投稿文がここに表示されます。"></textarea>
+              <div class="form-text">
+                <div class="row align-items-center">
+                  <div class="col">内容は自由に編集できます。X共有時は、この内容がそのまま使われます。</div>
+                  <div class="col-auto text-end">
+                    <span id="finalCount" class="badge bg-secondary"></span>
+                  </div>
+                </div>
+              </div>
+              <div id="finalAlert" class="alert alert-danger mt-2 py-2 mb-0" hidden>
+                Xの投稿可能文字数（140文字）を超えています。
+              </div>
+            </div>
+          </section>
+          <section class="mt-4 small text-muted" aria-labelledby="notice-title">
+            <h2 id="notice-title" class="h6 mb-2">注意事項・利用規約</h2>
+
+            <ul class="mb-3 ps-3">
+              <li>本ツールは非公式のファンメイドツールです。</li>
+              <li>画像の著作権は各権利者に帰属します。</li>
+              <li>本ツールで作成した画像・投稿内容について、作者は責任を負いません。</li>
+              <li>公序良俗に反する利用や、権利者・第三者へ迷惑を及ぼす利用は禁止します。</li>
+            </ul>
+
+            <hr>
+
+            <p class="mb-3">
+              「ラブライブ！」「蓮ノ空女学院スクールアイドルクラブ」および関連する名称・ロゴ・画像等の著作権・商標権は各権利者に帰属します。本ツールは権利者とは一切関係のない非公式ファンメイドツールです。
+            </p>
+            <hr>
+            <p class="mb-0 text-end">
+              © 2026 活動記録テロップメーカー
+            </p>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <div id="crop-modal" class="modal fade" tabindex="-1" aria-labelledby="crop-modal-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="crop-modal-title" class="modal-title fs-5">画像をトリミング</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-secondary">画像をドラッグして位置を調整できます。ホイールまたはピンチ操作で拡大・縮小できます。</p>
+            <div class="crop-stage">
+              <img id="crop-image" alt="トリミングする画像" />
+            </div>
+            <div class="mt-3" aria-label="アスペクト比">
+              <span class="small fw-semibold me-2">アスペクト比</span>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-primary" data-aspect-ratio="16:9" aria-pressed="true">16:9</button>
+                <button type="button" class="btn btn-outline-primary" data-aspect-ratio="9:16" aria-pressed="false">9:16</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer flex-column flex-sm-row">
+            <button id="crop-cancel-button" type="button" class="btn btn-outline-secondary w-100 w-sm-auto">キャンセル</button>
+            <button id="original-image-button" type="button" class="btn btn-outline-primary w-100 w-sm-auto">元画像のまま続行</button>
+            <button id="apply-crop-button" type="button" class="btn btn-primary w-100 w-sm-auto">適用</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+    <script>
+      (() => {
+        const imageInput = document.querySelector('#image-input');
+        const speakerInput = document.querySelector('#speaker-input');
+        const dialogueInput = document.querySelector('#dialogue-input');
+        const hashtagInput = document.querySelector('#hashtag-input');
+        const hashtagAccordion = document.querySelector('#hashtag-accordion');
+        const includeDialogueInput = document.querySelector('#include-dialogue-input');
+        const postTextInput = document.querySelector('#post-text-input');
+        const canvas = document.querySelector('#canvas');
+        const emptyMessage = document.querySelector('#empty-message');
+        const downloadButton = document.querySelector('#download-button');
+        const shareButton = document.querySelector('#share-button');
+        const status = document.querySelector('#status');
+        const cropModalElement = document.querySelector('#crop-modal');
+        const cropImage = document.querySelector('#crop-image');
+        const cropCancelButton = document.querySelector('#crop-cancel-button');
+        const originalImageButton = document.querySelector('#original-image-button');
+        const applyCropButton = document.querySelector('#apply-crop-button');
+        const aspectButtons = document.querySelectorAll('[data-aspect-ratio]');
+        const ctx = canvas.getContext('2d');
+        const cropModal = new bootstrap.Modal(cropModalElement);
+
+        const POST_LIMIT = 140;
+        const WARNING_RATIO = 0.85;
+        const finalCount = document.querySelector("#finalCount");
+        const finalAlert = document.querySelector("#finalAlert");
+
+        let sourceImage = null;
+        let originalImage = null;
+        let cropper = null;
+        let cropImageLoaded = false;
+        let cropAccepted = false;
+        let hashtagChecks;
+
+        // この配列を編集するだけで、カテゴリーとチェックボックスを追加・削除できる。
+        const hashtagGroups = [
+          {
+            title: '基本タグ',
+            icon: 'bi-tags',
+            open: true,
+            tags: [{ text: '#蓮ノ空' }, { text: '#リンクラ' }, { text: '#lovelive' }],
+          },
+          {
+            title: '映画タグ',
+            icon: 'bi-film',
+            open: true,
+            tags: [{ text: '#映画蓮ノ空' }, { text: '#映画蓮ノ空感想' }],
+          },
+          {
+            title: '6th Liveタグ',
+            icon: 'bi-bank',
+            open: false,
+            tags: [
+              { text: '#蓮ノ空6th福岡Day1' }, { text: '#蓮ノ空6th福岡Day2' },
+              { text: '#蓮ノ空6th兵庫Day1' }, { text: '#蓮ノ空6th兵庫Day2' },
+              { text: '#蓮ノ空6th神奈川Day1' }, { text: '#蓮ノ空6th神奈川Day2' },
+              { text: '#蓮ノ空6th埼玉Day1' }, { text: '#蓮ノ空6th埼玉Day2' },
+            ],
+          },
+          {
+            title: 'ジェネレータータグ',
+            icon: 'bi-chat-heart',
+            open: false,
+            tags: [{ text: '#活動記録テロップメーカー', checked: true }],
+          },
+        ];
+
+        // Photoshopで1920×1080素材から実測した活動記録のレイアウト定数。
+        const REFERENCE_WIDTH = 1920;
+        const REFERENCE_HEIGHT = 1080;
+        const DIALOGUE_FONT_PIXELS = 50;
+        const SPEAKER_FONT_PIXELS = 40;
+        const DIALOGUE_LAST_BASELINE_PIXELS = 156;
+        const SPEAKER_BASELINE_PIXELS = 68;
+        const DIALOGUE_CENTER_OFFSET_PIXELS = 6;
+        const SPEAKER_CENTER_OFFSET_PIXELS = 3;
+        const DIALOGUE_FONT_RATIO = DIALOGUE_FONT_PIXELS / REFERENCE_HEIGHT;
+        const SPEAKER_FONT_RATIO = SPEAKER_FONT_PIXELS / REFERENCE_HEIGHT;
+        const DIALOGUE_LAST_BASELINE_RATIO = DIALOGUE_LAST_BASELINE_PIXELS / REFERENCE_HEIGHT;
+        const SPEAKER_BASELINE_RATIO = SPEAKER_BASELINE_PIXELS / REFERENCE_HEIGHT;
+        const DIALOGUE_CENTER_OFFSET_RATIO = DIALOGUE_CENTER_OFFSET_PIXELS / REFERENCE_WIDTH;
+        const SPEAKER_CENTER_OFFSET_RATIO = SPEAKER_CENTER_OFFSET_PIXELS / REFERENCE_WIDTH;
+        const TRACKING_RATIO = 38 / 1000;
+        const LINE_HEIGHT_RATIO = 62 / 50;
+
+        function setStatus(message) { status.textContent = message; }
+
+        function normalizeHashtags(value) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+        function renderHashtagAccordion() {
+          hashtagAccordion.replaceChildren();
+          let tagIndex = 0;
+          hashtagGroups.forEach((group, groupIndex) => {
+            const headingId = `hashtag-heading-${groupIndex}`;
+            const collapseId = `hashtag-collapse-${groupIndex}`;
+            const item = document.createElement('div');
+            item.className = 'accordion-item';
+            const heading = document.createElement('h3');
+            heading.id = headingId;
+            heading.className = 'accordion-header';
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = `accordion-button ${group.open ? '' : 'collapsed'}`;
+            toggle.dataset.bsToggle = 'collapse';
+            toggle.dataset.bsTarget = `#${collapseId}`;
+            toggle.setAttribute('aria-expanded', String(group.open));
+            toggle.setAttribute('aria-controls', collapseId);
+            const icon = document.createElement('i');
+            icon.className = `bi ${group.icon} me-2`;
+            icon.setAttribute('aria-hidden', 'true');
+            toggle.append(icon, document.createTextNode(group.title));
+            heading.append(toggle);
+            const collapse = document.createElement('div');
+            collapse.id = collapseId;
+            collapse.className = `accordion-collapse collapse ${group.open ? 'show' : ''}`;
+            collapse.setAttribute('aria-labelledby', headingId);
+            const body = document.createElement('div');
+            body.className = 'accordion-body';
+            group.tags.forEach(tag => {
+              const wrapper = document.createElement('div');
+              wrapper.className = 'form-check';
+              const checkbox = document.createElement('input');
+              checkbox.className = 'form-check-input hashtag-check';
+              checkbox.type = 'checkbox';
+              checkbox.id = `hashtag-${tagIndex++}`;
+              checkbox.value = tag.text;
+              checkbox.checked = Boolean(tag.checked);
+              checkbox.addEventListener("change", updateHashtagInput);
+              const label = document.createElement('label');
+              label.className = 'form-check-label';
+              label.htmlFor = checkbox.id;
+              label.textContent = tag.text;
+              wrapper.append(checkbox, label);
+              body.append(wrapper);
+            });
+            collapse.append(body);
+            item.append(heading, collapse);
+            hashtagAccordion.append(item);
+          });
+          hashtagChecks = document.querySelectorAll(".hashtag-check");
+        }
+        
+
+        function updatePostText() {
+          const parts = [];
+          const dialogue = dialogueInput.value.trim();
+          const speaker = speakerInput.value.trim();
+          if (includeDialogueInput.checked && dialogue) {
+            parts.push(`${speaker ? `${speaker}` : ''}「${dialogue}」`);
+          }
+          const tags = hashtagInput.value.trim();
+
+            if (tags) {
+              parts.push(tags);
+            }
+
+            postTextInput.value = parts.join("\n\n");
+
+            const length = postTextInput.value.length;
+
+            finalCount.textContent = `${length} / ${POST_LIMIT}`;
+            finalCount.className = getBadgeClass(length, POST_LIMIT);
+
+            finalAlert.hidden = length <= POST_LIMIT;
+          }
+
+         function updateHashtagInput() {
+
+          const checkedTags =
+            [...hashtagChecks]
+              .filter(cb => cb.checked)
+              .map(cb => cb.value);
+
+          const allPresetTags =
+            [...hashtagChecks]
+              .map(cb => cb.value);
+
+          const currentTags =
+            normalizeHashtags(
+              hashtagInput.value
+            );
+
+          const manualTags =
+            currentTags.filter(
+              tag => !allPresetTags.includes(tag)
+            );
+
+          hashtagInput.value =
+            [...manualTags, ...checkedTags]
+              .join(" ");
+
+          updatePostText();
+        }
+
+        function setTextStyle(fontSize) {
+          ctx.font = `600 ${fontSize}px "Klee One", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'alphabetic';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = '#000000';
+          // strokeText() は中心線を基準に描かれ、後続の白塗りで内側半分が覆われる。
+          // 4pxのストロークにより、見た目の外側縁を約2pxにする。
+          ctx.lineWidth = 4;
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+          ctx.miterLimit = 2;
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = 'source-over';
+        }
+
+        function trackedWidth(text, tracking) {
+          return ctx.measureText(text).width + Math.max(0, text.length - 1) * tracking;
+        }
+
+        function drawTrackedText(text, x, y, tracking) {
+          const width = trackedWidth(text, tracking);
+          let characterX = x - width / 2;
+          for (const character of text) {
+            const characterWidth = ctx.measureText(character).width;
+            const glyphCenterX = characterX + characterWidth / 2;
+            ctx.strokeText(character, glyphCenterX, y);
+            ctx.fillText(character, glyphCenterX, y);
+            characterX += characterWidth + tracking;
+          }
+        }
+
+        function wrapText(text, maxWidth, tracking) {
+          const lines = [];
+          for (const paragraph of text.replace(/\r\n?/g, '\n').split('\n')) {
+            if (!paragraph) { lines.push(''); continue; }
+            let line = '';
+            for (const character of paragraph) {
+              const candidate = line + character;
+              if (line && trackedWidth(candidate, tracking) > maxWidth) {
+                lines.push(line);
+                line = character;
+              } else {
+                line = candidate;
+              }
+            }
+            lines.push(line);
+          }
+          return lines;
+        }
+
+        function draw() {
+          if (!sourceImage) return;
+          const width = sourceImage.naturalWidth;
+          const height = sourceImage.naturalHeight;
+          canvas.width = width;
+          canvas.height = height;
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(sourceImage, 0, 0, width, height);
+
+          const dialogue = dialogueInput.value.trim();
+          const speaker = speakerInput.value.trim();
+          const dialogueCenterX = width / 2 - width * DIALOGUE_CENTER_OFFSET_RATIO;
+          const speakerCenterX = width / 2 - width * SPEAKER_CENTER_OFFSET_RATIO;
+
+          // セリフを先に描画し、最後の行は常に下端から14.074%の位置に固定する。
+          if (dialogue) {
+            const dialogueSize = height * DIALOGUE_FONT_RATIO;
+            const tracking = dialogueSize * TRACKING_RATIO;
+            const lineHeight = dialogueSize * LINE_HEIGHT_RATIO;
+            setTextStyle(dialogueSize);
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            const lines = wrapText(dialogue, width * (9 / 10), tracking);
+            const lastBaseline = height - height * DIALOGUE_LAST_BASELINE_RATIO;
+            lines.forEach((line, index) => {
+              if (line) drawTrackedText(line, dialogueCenterX, lastBaseline - (lines.length - 1 - index) * lineHeight, tracking);
+            });
+          }
+
+          // 話者はセリフの上ではなく、指定された下端基準の固定位置に描画する。
+          if (speaker) {
+            const speakerSize = height * SPEAKER_FONT_RATIO;
+            setTextStyle(speakerSize);
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            drawTrackedText(`[${speaker}]`, speakerCenterX, height - height * SPEAKER_BASELINE_RATIO, 0);
+          }
+        }
+
+        function useImage(image) {
+          sourceImage = image;
+          emptyMessage.hidden = true;
+          canvas.hidden = false;
+          downloadButton.disabled = false;
+          shareButton.disabled = false;
+          setStatus('');
+          const fontSize = image.naturalHeight * DIALOGUE_FONT_RATIO;
+          const fontReady = document.fonts ? document.fonts.load(`600 ${fontSize}px "Klee One"`) : Promise.resolve();
+          fontReady.then(draw, draw);
+        }
+
+        function ratioFromButton(button) {
+          const [width, height] = button.dataset.aspectRatio.split(':').map(Number);
+          return width / height;
+        }
+
+        function activateAspectButton(activeButton) {
+          aspectButtons.forEach(button => {
+            const active = button === activeButton;
+            button.classList.toggle('btn-primary', active);
+            button.classList.toggle('btn-outline-primary', !active);
+            button.setAttribute('aria-pressed', String(active));
+          });
+        }
+
+        function createCropper() {
+          if (!cropImageLoaded || !originalImage) return;
+          if (cropper) cropper.destroy();
+          const activeButton = document.querySelector('[data-aspect-ratio][aria-pressed="true"]');
+          cropper = new Cropper(cropImage, {
+            aspectRatio: ratioFromButton(activeButton),
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 1,
+            responsive: true,
+            background: false,
+            movable: true,
+            zoomable: true,
+            zoomOnWheel: true,
+            zoomOnTouch: true,
+            toggleDragModeOnDblclick: false,
+          });
+        }
+
+        imageInput.addEventListener('change', () => {
+          const [file] = imageInput.files;
+          if (!file) return;
+          if (!file.type.startsWith('image/')) { setStatus('画像ファイルを選択してください。'); return; }
+          const reader = new FileReader();
+          reader.onload = () => {
+            const image = new Image();
+            image.onload = () => {
+              originalImage = image;
+              cropAccepted = false;
+              cropImageLoaded = false;
+              activateAspectButton(aspectButtons[0]);
+              cropImage.src = reader.result;
+              cropModal.show();
+            };
+            image.onerror = () => setStatus('この画像は読み込めませんでした。');
+            image.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+
+        cropImage.addEventListener('load', () => {
+          cropImageLoaded = true;
+          if (cropModalElement.classList.contains('show')) createCropper();
+        });
+
+        cropModalElement.addEventListener('shown.bs.modal', createCropper);
+        cropModalElement.addEventListener('hidden.bs.modal', () => {
+          if (cropper) { cropper.destroy(); cropper = null; }
+          cropImageLoaded = false;
+          if (!cropAccepted) imageInput.value = '';
+          originalImage = null;
+        });
+
+        aspectButtons.forEach(button => button.addEventListener('click', () => {
+          activateAspectButton(button);
+          if (cropper) cropper.setAspectRatio(ratioFromButton(button));
+        }));
+
+        cropCancelButton.addEventListener('click', () => cropModal.hide());
+
+        originalImageButton.addEventListener('click', () => {
+          if (!originalImage) return;
+          cropAccepted = true;
+          useImage(originalImage);
+          cropModal.hide();
+        });
+
+        applyCropButton.addEventListener('click', () => {
+          if (!cropper) return;
+          const croppedCanvas = cropper.getCroppedCanvas({ imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
+          if (!croppedCanvas) { setStatus('画像の切り出しに失敗しました。'); return; }
+          const croppedImage = new Image();
+          croppedImage.onload = () => {
+            cropAccepted = true;
+            useImage(croppedImage);
+            cropModal.hide();
+          };
+          croppedImage.onerror = () => setStatus('切り出した画像を読み込めませんでした。');
+          croppedImage.src = croppedCanvas.toDataURL('image/png');
+        });
+
+        [speakerInput, dialogueInput].forEach(input => input.addEventListener('input', () => {
+          draw();
+          updatePostText();
+        }));
+        hashtagInput.addEventListener('input', updatePostText);
+        includeDialogueInput.addEventListener('change', updatePostText);
+        renderHashtagAccordion();
+        updateHashtagInput();
+        speakerInput.dispatchEvent(new Event("input"));
+
+        // クリアボタン共通
+        function registerClearButton(buttonId, input, callback) {
+          const button = document.querySelector(buttonId);
+
+          button.addEventListener("click", () => {
+            if (!input.value.trim()) return;
+
+            input.value = "";
+
+            callback?.();
+          });
+        }
+
+        //初期化
+        registerClearButton(
+          "#clear-speaker-button",
+          speakerInput,
+          () => {
+            draw();
+            updatePostText();
+          }
+        );
+
+        registerClearButton(
+          "#clear-dialogue-button",
+          dialogueInput,
+          () => {
+            draw();
+            updatePostText();
+          }
+        );
+
+        registerClearButton(
+          "#clear-hashtag-button",
+          hashtagInput,
+          () => {
+            hashtagChecks.forEach(cb => {
+              cb.checked = false;
+            });
+
+            updateHashtagInput();
+          }
+        );
+
+        function getBadgeClass(length, limit) {
+          if (length > limit) {
+            return "badge bg-danger";
+          }
+
+          if (length >= limit * WARNING_RATIO) {
+            return "badge bg-warning text-dark";
+          }
+
+          return "badge bg-secondary";
+        }
+
+        function exportBlob() { return new Promise(resolve => canvas.toBlob(resolve, 'image/png')); }
+
+        downloadButton.addEventListener('click', async () => {
+          if (!sourceImage) return;
+          const blob = await exportBlob();
+          if (!blob) { setStatus('PNGの作成に失敗しました。'); return; }
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'katsudo-kiroku-telop.png';
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          setStatus('PNGを保存しました。');
+        });
+
+        shareButton.addEventListener('click', async () => {
+          if (!sourceImage) return;
+          const text = postTextInput.value;
+          const blob = await exportBlob();
+          const file = blob && new File([blob], 'katsudo-kiroku-telop.png', { type: 'image/png' });
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ text, files: [file] }); return; } catch (error) { if (error.name === 'AbortError') return; }
+          }
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+          setStatus('Xの投稿画面を開きました。画像はPNG保存後に添付してください。');
+        });
+      })();
+    </script>
+  </body>
+</html>
