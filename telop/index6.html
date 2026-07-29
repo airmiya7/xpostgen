@@ -117,18 +117,14 @@
 
               <div class="d-grid gap-2">
                 <button id="download-button" class="btn btn-primary" type="button" disabled>PNGを保存</button>
-                <button id="share-button" class="btn btn-outline-secondary" type="button" disabled>Xで共有</button>
+                <button id="mobile-share-button" class="btn btn-outline-secondary" type="button" disabled hidden>画像付きでXへ共有</button>
+                <button id="desktop-post-button" class="btn btn-outline-secondary" type="button" disabled hidden>投稿文をXで開く</button>
               </div>
-              <div id="pc-share-alert" class="alert alert-info mt-3 mb-0" role="note" hidden>
-                <div class="d-flex align-items-start">
-                  <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
-                  <div>
-                    <p class="mb-2">PCブラウザでは画像付き投稿に対応していません。</p>
-                    <p class="mb-1">①「画像を保存」で画像を保存してください。</p>
-                    <p class="mb-1">②「Xへ投稿」で投稿画面を開きます。</p>
-                    <p class="mb-0">③保存した画像をXへ添付して投稿してください。</p>
-                  </div>
-                </div>
+              <div id="desktop-post-notice" class="alert alert-info small mt-3 mb-0" role="alert" hidden>
+                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                PCでは画像を自動添付できません。
+                先に「画像を保存」ボタンで画像を保存し、
+                Xの投稿画面でご自身で添付してください。
               </div>
               <p id="status" class="small text-primary mt-3 mb-0" role="status" aria-live="polite"></p>
               <p class="privacy-note mt-3 mb-0">画像はブラウザ内でのみ処理され、サーバーへ送信・保存されません。</p>
@@ -231,8 +227,9 @@
         const canvas = document.querySelector('#canvas');
         const emptyMessage = document.querySelector('#empty-message');
         const downloadButton = document.querySelector('#download-button');
-        const shareButton = document.querySelector('#share-button');
-        const pcShareAlert = document.querySelector('#pc-share-alert');
+        const mobileShareButton = document.querySelector('#mobile-share-button');
+        const desktopPostButton = document.querySelector('#desktop-post-button');
+        const desktopPostNotice = document.querySelector('#desktop-post-notice');
         const status = document.querySelector('#status');
         const cropModalElement = document.querySelector('#crop-modal');
         const cropImage = document.querySelector('#crop-image');
@@ -255,25 +252,30 @@
         let cropAccepted = false;
         let hashtagChecks;
 
-        function supportsImageSharing() {
-          if (typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function') return false;
-          try {
-            // canShare() のAPI有無だけでなく、実際にPNGファイルを共有できるかで判定する。
-            navigator.canShare();
-            const testFile = new File(
-              [new Blob([], { type: 'image/png' })],
-              'katsudo-kiroku-telop.png',
-              { type: 'image/png' },
-            );
-            return navigator.canShare({ files: [testFile] });
-          } catch {
-            return false;
+        function isMobileDevice() {
+          if (
+            navigator.userAgentData &&
+            typeof navigator.userAgentData.mobile === 'boolean'
+          ) {
+            return navigator.userAgentData.mobile;
           }
+
+          const mobileUa = /Android|iPhone|iPod|Mobile/i.test(navigator.userAgent);
+          const iPad =
+            /iPad/i.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+          return mobileUa || iPad;
         }
 
-        const imageSharingSupported = supportsImageSharing();
-        shareButton.textContent = imageSharingSupported ? 'Xで共有' : 'Xへ投稿';
-        pcShareAlert.hidden = imageSharingSupported;
+        function initializeShareUi() {
+          const mobile = isMobileDevice();
+          mobileShareButton.hidden = !mobile;
+          desktopPostButton.hidden = mobile;
+          desktopPostNotice.hidden = mobile;
+        }
+
+        initializeShareUi();
 
         // この配列を編集するだけで、カテゴリーとチェックボックスを追加・削除できる。
         const hashtagGroups = [
@@ -533,7 +535,8 @@
           emptyMessage.hidden = true;
           canvas.hidden = false;
           downloadButton.disabled = false;
-          shareButton.disabled = false;
+          mobileShareButton.disabled = false;
+          desktopPostButton.disabled = false;
           setStatus('');
           const fontSize = image.naturalHeight * DIALOGUE_FONT_RATIO;
           const fontReady = document.fonts ? document.fonts.load(`600 ${fontSize}px "Klee One"`) : Promise.resolve();
@@ -703,9 +706,42 @@
 
         function exportBlob() { return new Promise(resolve => canvas.toBlob(resolve, 'image/png')); }
 
-        function openXPost(text) {
+        function openPostOnX() {
+          if (!sourceImage) return;
+          const text = postTextInput.value;
           window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
           setStatus('Xの投稿画面を開きました。画像はPNG保存後に添付してください。');
+        }
+
+        async function shareImageAndText() {
+          if (!sourceImage) return;
+          const postText = postTextInput.value;
+          const blob = await exportBlob();
+          if (!blob) {
+            setStatus('画像の生成に失敗しました。');
+            return;
+          }
+
+          const file = new File([blob], 'activity-record.png', { type: 'image/png' });
+          if (
+            typeof navigator.share !== 'function' ||
+            typeof navigator.canShare !== 'function' ||
+            !navigator.canShare({ files: [file] })
+          ) {
+            setStatus('このブラウザでは画像付き共有を利用できません。画像を保存して、Xアプリから手動で添付してください。');
+            return;
+          }
+
+          try {
+            await navigator.share({
+              files: [file],
+              text: postText,
+            });
+          } catch (error) {
+            if (error.name === 'AbortError') return;
+            console.error(error);
+            setStatus('共有に失敗しました。');
+          }
         }
 
         downloadButton.addEventListener('click', async () => {
@@ -721,22 +757,8 @@
           setStatus('PNGを保存しました。');
         });
 
-        shareButton.addEventListener('click', async () => {
-          if (!sourceImage) return;
-          const text = postTextInput.value;
-
-          if (!imageSharingSupported) {
-            openXPost(text);
-            return;
-          }
-
-          const blob = await exportBlob();
-          const file = blob && new File([blob], 'katsudo-kiroku-telop.png', { type: 'image/png' });
-          if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ text, files: [file] }); return; } catch (error) { if (error.name === 'AbortError') return; }
-          }
-          openXPost(text);
-        });
+        mobileShareButton.addEventListener('click', shareImageAndText);
+        desktopPostButton.addEventListener('click', openPostOnX);
       })();
     </script>
   </body>
