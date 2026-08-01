@@ -116,6 +116,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               </div>
           </div>
         </div>
+
+        <div class="form-check form-switch mt-3">
+          <input class="form-check-input" type="checkbox" role="switch" id="boostMode">
+          <label class="form-check-label" for="boostMode">ブーストモード</label>
+        </div>
+        <div class="form-text mb-2">
+          指定した回数だけ文字を繰り返します。<br>
+          140文字を超える長文も生成できます。
+        </div>
+        <div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label mb-0" for="boostRange">繰り返し回数</label>
+            <span id="boostRangeValue" class="badge bg-secondary">10回</span>
+          </div>
+          <input type="range" class="form-range" id="boostRange" min="1" max="1000" step="1" value="10" disabled>
+        </div>
       </div>
 
       <!-- ハッシュタグ -->
@@ -173,10 +189,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <script>
 const LIMIT = 140;
+const BOOST_MIN = 1;
+const BOOST_MAX = 10000;
+const BOOST_DEFAULT = 10;
 
 const repeatText = document.getElementById("repeatText");
 const suffixText = document.getElementById("suffixText");
 const resultText = document.getElementById("resultText");
+const boostMode = document.getElementById("boostMode");
+const boostRange = document.getElementById("boostRange");
+const boostRangeValue = document.getElementById("boostRangeValue");
 
 const repeatCount = document.getElementById("repeatCount");
 const suffixCount = document.getElementById("suffixCount");
@@ -361,14 +383,15 @@ function updateCounts() {
   const suffixPart = suffix ? " " + suffix : "";
   const repeatLimit = Math.max(LIMIT - suffixPart.length, 0);
 
-  repeatText.maxLength = repeatLimit;
-
-  if (repeatText.value.length > repeatLimit) {
-    repeatText.value = repeatText.value.slice(0, repeatLimit);
+  if (boostMode.checked) {
+    repeatText.maxLength = 1000;
+    repeatCount.textContent = `${repeatText.value.length}文字`;
+    repeatCount.className = "badge bg-secondary";
+  } else {
+    repeatText.maxLength = repeatLimit;
+    repeatCount.textContent = `${repeatText.value.length} / ${repeatLimit}`;
+    repeatCount.className = getBadgeClass(repeatText.value.length, repeatLimit);
   }
-
-  repeatCount.textContent = `${repeatText.value.length} / ${repeatLimit}`;
-  repeatCount.className = getBadgeClass(repeatText.value.length, repeatLimit);
 
   suffixCount.textContent = `${suffix.length} / ${LIMIT}`;
   suffixCount.className = getBadgeClass(suffix.length, LIMIT);
@@ -383,7 +406,11 @@ function generatePost() {
   const suffixPart = suffix ? " " + suffix : "";
   const maxRepeatLength = LIMIT - suffixPart.length;
 
-  if (!repeat) {
+  if (boostMode.checked) {
+    const boostCount = Number(boostRange.value);
+    const body = repeat.repeat(boostCount);
+    resultText.value = body + (body ? suffixPart : suffix);
+  } else if (!repeat) {
     resultText.value = suffix;
   } else {
     let repeated = "";
@@ -395,8 +422,13 @@ function generatePost() {
     resultText.value = repeated + suffixPart;
   }
 
-  finalCount.textContent = `${resultText.value.length} / ${LIMIT}`;
-  finalCount.className = getBadgeClass(resultText.value.length, LIMIT);
+  const resultLength = Array.from(resultText.value).length;
+  finalCount.textContent = boostMode.checked
+    ? `${resultLength.toLocaleString()}文字`
+    : `${resultLength} / ${LIMIT}`;
+  finalCount.className = boostMode.checked
+    ? "badge bg-secondary"
+    : getBadgeClass(resultLength, LIMIT);
 
   updatePostButtonState();
 }
@@ -424,9 +456,20 @@ function updateSuffixFromCheckbox() {
 
 // Xに投稿する
 function postToX() {
+  const resultLength = Array.from(resultText.value).length;
+  if (resultLength > LIMIT) {
+    const shouldContinue = window.confirm(
+      "生成結果は140文字を超えています。\n\n" +
+      "X Premiumなど、長文投稿に対応したアカウントで利用してください。\n" +
+      "通常アカウントでは投稿できない場合があります。\n\n" +
+      "このままXを開きますか？"
+    );
+    if (!shouldContinue) return;
+  }
+
   const text = encodeURIComponent(resultText.value);
   const url = `https://twitter.com/intent/tweet?text=${text}`;
-  window.open(url, "_blank");
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 // 生成結果がない場合は投稿させない
@@ -441,6 +484,14 @@ function updatePostButtonState() {
 // ボタンアクション
 repeatText.addEventListener("input", generatePost);
 suffixText.addEventListener("input", generatePost);
+boostMode.addEventListener("change", () => {
+  boostRange.disabled = !boostMode.checked;
+  generatePost();
+});
+boostRange.addEventListener("input", () => {
+  boostRangeValue.textContent = `${boostRange.value}回`;
+  generatePost();
+});
 
 clearRepeat.addEventListener("click", () => {
   repeatText.value = "";
@@ -471,6 +522,11 @@ resultText.addEventListener("click", async () => {
 postButton.addEventListener("click", postToX);
 
 // 初期化
+boostRange.min = BOOST_MIN;
+boostRange.max = BOOST_MAX;
+boostRange.value = BOOST_DEFAULT;
+boostRangeValue.textContent = `${BOOST_DEFAULT}回`;
+boostRange.disabled = true;
 renderHashtagChecks();
 updateSuffixFromCheckbox();
 </script>
